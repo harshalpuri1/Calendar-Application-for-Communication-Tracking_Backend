@@ -13,9 +13,6 @@ app.use(errorHandler);
 
 app.use('/api', routes);
 
-app.get('/', (req, res) => {
-  res.send('Welcome to the Calendar Application for Communication Tracking, Your service is live 🎉');
-});
 
 app.use((err, req, res, next) => {    
     if (err.isBoom) {
