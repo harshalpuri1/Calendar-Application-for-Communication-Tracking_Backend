@@ -2,16 +2,26 @@ const db = require('../../../services/database/mysql');
 
 // Get all companies
 const getCompanies = async (email) => {
-  const [rows] = await db.query('SELECT * FROM companies WHERE email = ?', [email]);
+  const [rows] = await db.query('SELECT * FROM companies WHERE adminEmail = ?', [email]);
   return rows;
 };
 
 // Add a new company
 const addCompany = async (company) => {
-  const { name, location, linkedIn, emails, phoneNumbers, comments, periodicity } = company;
+  const { name, adminEmail, location, linkedIn, emails, phoneNumbers, comments, periodicity } = company;
+
+  // Check if the adminEmail exists in the admin table
+  const [adminRows] = await db.query('SELECT * FROM admin WHERE email = ?', [adminEmail]);
+
+  // If admin doesn't exist, throw an error
+  if (adminRows.length === 0) {
+    throw new Error(`Admin with email ${adminEmail} does not exist.`);
+  }
+
+  // Insert the new company if adminEmail exists
   const [result] = await db.query(
-    'INSERT INTO companies (name, location, linkedIn, emails, phoneNumbers, comments, periodicity) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [name, location, linkedIn, emails, phoneNumbers, comments, periodicity]
+    'INSERT INTO companies (name, adminEmail, location, linkedIn, emails, phoneNumbers, comments, periodicity) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [name, adminEmail, location, linkedIn, emails, phoneNumbers, comments, periodicity]
   );
   return result;
 };
