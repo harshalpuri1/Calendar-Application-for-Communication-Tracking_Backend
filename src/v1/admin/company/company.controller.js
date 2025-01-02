@@ -1,52 +1,118 @@
 const Company = require('./company.model');
+const {
+  CompanySchema,
+  CompanyAddSchema,
+  CompanyUpdateSchema,
+  CompanyDeleteSchema,
+} = require('./company.validation');
+const Boom = require('@hapi/boom'); // Ensure Boom is installed and imported
 
-// Get all companies
-const getCompanies = (req, res) => {
-  Company.getCompanies((err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json(results);
-  });
-};
-
-// Add a company
-const addCompany = async (req, res) => {
+// ✅ Get Companies
+const getCompanies = async (req, res) => {
   try {
-    const result = await Company.addCompany(req.body);
-    if (!result || !result.insertId) {
-      console.error('Insert failed:', result);
-      return res.status(500).json({ error: 'Failed to add company.' });
+    const { error } = CompanySchema.validate(req.query, { abortEarly: false });
+    if (error) {
+      throw Boom.badRequest(error.details[0].message);
     }
 
-    res.status(201).json({
-      message: 'Company added successfully',
-      id: result.insertId,
-    });
+    const results = await Company.getCompanies(req.query.email);
+    res.json(results);
   } catch (err) {
-    console.error('Error adding company:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(err.isBoom ? err.output.statusCode : 500).json({ error: err.message });
   }
 };
 
-// Update a company
-const updateCompany = (req, res) => {
-  Company.updateCompany(req.params.id, req.body, (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
+// ✅ Add Company
+const addCompany = async (req, res) => {
+  try {
+    const { error } = CompanyAddSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      throw Boom.badRequest(error.details[0].message);
     }
+
+    const result = await Company.addCompany(req.body);
+    res.status(201).json({ message: 'Company added successfully', id: result.insertId });
+  } catch (err) {
+    res.status(err.isBoom ? err.output.statusCode : 500).json({ error: err.message });
+  }
+};
+
+// ✅ Update Company
+const updateCompany = async (req, res) => {
+  try {
+    const { error } = CompanyUpdateSchema.validate(
+      { id: req.params.id, ...req.body },
+      { abortEarly: false }
+    );
+    if (error) {
+      throw Boom.badRequest(error.details[0].message);
+    }
+
+    await Company.updateCompany(req.params.id, req.body);
     res.json({ message: 'Company updated successfully' });
-  });
+  } catch (err) {
+    res.status(err.isBoom ? err.output.statusCode : 500).json({ error: err.message });
+  }
 };
 
-// Delete a company
-const deleteCompany = (req, res) => {
-  Company.deleteCompany(req.params.id, (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
+// ✅ Delete Company
+const deleteCompany = async (req, res) => {
+  try {
+    const { error } = CompanyDeleteSchema.validate({ id: req.params.id });
+    if (error) {
+      throw Boom.badRequest(error.details[0].message);
     }
+
+    await Company.deleteCompany(req.params.id);
     res.json({ message: 'Company deleted successfully' });
-  });
+  } catch (err) {
+    res.status(err.isBoom ? err.output.statusCode : 500).json({ error: err.message });
+  }
 };
 
-module.exports = { getCompanies, addCompany, updateCompany, deleteCompany };
+// ✅ Validate Middleware for Routes (Optional if inline validation is removed)
+const validateGetCompany = (req, res, next) => {
+  const { error } = CompanySchema.validate(req.query, { abortEarly: false });
+  if (error) {
+    throw Boom.badRequest(error.details[0].message);
+  }
+  next();
+};
+
+const validateAddCompany = (req, res, next) => {
+  const { error } = CompanyAddSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    throw Boom.badRequest(error.details[0].message);
+  }
+  next();
+};
+
+const validateUpdateCompany = (req, res, next) => {
+  const { error } = CompanyUpdateSchema.validate(
+    { id: req.params.id, ...req.body },
+    { abortEarly: false }
+  );
+  if (error) {
+    throw Boom.badRequest(error.details[0].message);
+  }
+  next();
+};
+
+const validateDeleteCompany = (req, res, next) => {
+  const { error } = CompanyDeleteSchema.validate({ id: req.params.id });
+  if (error) {
+    throw Boom.badRequest(error.details[0].message);
+  }
+  next();
+};
+
+module.exports = {
+  getCompanies,
+  addCompany,
+  updateCompany,
+  deleteCompany,
+  validateGetCompany,
+  validateAddCompany,
+  validateUpdateCompany,
+  validateDeleteCompany,
+};

@@ -5,6 +5,7 @@ class ServerSuccess{};
 
 JoiErrors.error={
     "username": 'Username must be a string.',
+    "nameRequired":"Name is required",
     "usernameRequired":"UserName is required",
     "email":"Invalid email format",
     "emailRequired":"Email is required",
