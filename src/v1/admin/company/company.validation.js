@@ -17,9 +17,12 @@ const CompanyAddSchema = Joi.object({
     'string.email': 'Invalid email format',
     'any.required': 'Admin email is required',
   }),
-  location: Joi.string().required().messages({
-    'any.required': 'Location is required',
-  }),
+  location: Joi.string().optional(),
+  linkedIn: Joi.string().uri().optional(),
+  emails: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string().email())).optional(),
+  phoneNumbers: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string())).optional(),
+  comments: Joi.string().optional(),
+  periodicity: Joi.string().optional(),
 });
 
 // ✅ Validation for updating a company
