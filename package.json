@@ -1,12 +1,9 @@
 {
   "name": "calendar-backend",
   "version": "1.0.0",
-  "main": "server.js",
-  "engines": {
-    "node": "22.x"
-  },
+  "main": "bin/www",
   "scripts": {
-    "start": "node server.js"
+    "start": "nodemon bin/www"
   },
   "author": "Harshal Puri",
   "license": "ISC",
