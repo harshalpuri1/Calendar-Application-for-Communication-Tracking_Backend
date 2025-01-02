@@ -32,6 +32,7 @@ const CompanyUpdateSchema = Joi.object({
     'any.required': 'ID is required for updating a company',
   }),
   name: Joi.string().optional(),
+  adminEmail: Joi.string().optional(),
   location: Joi.string().optional(),
   linkedIn: Joi.string().uri().optional(),
   emails: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string().email())).optional(),
