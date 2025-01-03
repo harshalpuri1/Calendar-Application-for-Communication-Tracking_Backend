@@ -1,16 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const CommunicationController = require('./communication.controller');
-const {
-  validateAddMethod,
-  validateDeleteMethod,
-  validateGetMethodByEmail
-} = require('./communication.validation');
 
-// Routes
-router.get('/methods', CommunicationController.getAllMethods);
-router.post('/methods', validateAddMethod, CommunicationController.addMethod);
-router.delete('/methods/:id', validateDeleteMethod, CommunicationController.deleteMethod);
-router.get('/methods/:email', validateGetMethodByEmail, CommunicationController.getMethodByEmail);
+const {
+  getAllMethodsByEmail,
+  addMethod,
+  updateMethod,
+  deleteMethod,
+  validateGetMethodByEmail,
+  validateAddMethod,
+  validateUpdateMethod,
+  validateDeleteMethod
+} = require('./communication.controller');
+
+// Routes with validation middleware
+router.get('/methods', validateGetMethodByEmail, getAllMethodsByEmail);
+router.post('/methods', validateAddMethod, addMethod);
+router.put('/methods/:id', validateUpdateMethod, updateMethod);
+router.delete('/methods/:id', validateDeleteMethod, deleteMethod);
 
 module.exports = router;

@@ -17,15 +17,8 @@ const getMethodByEmailSchema = Joi.object({
 });
 
 module.exports = {
-  validateAddMethod: (req, res, next) => validateRequest(addMethodSchema, req.body, res, next),
-  validateDeleteMethod: (req, res, next) => validateRequest(deleteMethodSchema, req.params, res, next),
-  validateGetMethodByEmail: (req, res, next) => validateRequest(getMethodByEmailSchema, req.params, res, next)
-};
-
-function validateRequest(schema, data, res, next) {
-  const { error } = schema.validate(data);
-  if (error) {
-    return res.status(400).json({ success: false, errors: error.details.map(e => e.message) });
-  }
-  next();
+  addMethodSchema,
+  deleteMethodSchema,
+  getMethodByEmailSchema
 }
+

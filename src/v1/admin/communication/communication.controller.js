@@ -1,40 +1,38 @@
 const CommunicationModel = require('./communication.model');
-const Boom = require('@hapi/boom');
+const {
+  addMethodSchema,
+  deleteMethodSchema,
+  getMethodByEmailSchema
+} = require('./communication.validation');
+const Boom = require('@hapi/boom'); // Ensure Boom is installed and imported
 
-/**
- * 📝 **Initialize Communication Table**
- */
-(async () => {
+// ✅ Get Communication Methods by adminEmail
+const getAllMethodsByEmail = async (req, res) => {
   try {
-    await CommunicationModel.createTable();
-    console.log('✅ Communication table initialized successfully');
-  } catch (err) {
-    console.error('❌ Failed to initialize communication table:', err.message);
-  }
-})();
+    const { error } = getMethodByEmailSchema.validate(req.query, { abortEarly: false });
+    if (error) {
+      throw Boom.badRequest(error.details[0].message);
+    }
 
-/**
- * 📝 **Get All Communication Methods**
- */
-const getAllMethods = async (req, res, next) => {
-  try {
-    const methods = await CommunicationModel.getAllMethods();
+    const methods = await CommunicationModel.getAllMethodsByEmail(req.query.email);
     return res.status(200).json({
       success: true,
       message: 'Communication methods fetched successfully.',
       data: methods,
     });
   } catch (err) {
-    console.error('❌ Error fetching methods:', err.message);
-    next(Boom.internal('Failed to fetch communication methods'));
+    res.status(err.isBoom ? err.output.statusCode : 500).json({ error: err.message });
   }
 };
 
-/**
- * 📝 **Add a Communication Method**
- */
+// ✅ Add Communication Method
 const addMethod = async (req, res) => {
   try {
+    const { error } = addMethodSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      throw Boom.badRequest(error.details[0].message);
+    }
+
     const { name, description, sequence, mandatory, adminEmail } = req.body;
 
     await CommunicationModel.addMethod({
@@ -50,62 +48,86 @@ const addMethod = async (req, res) => {
       message: 'Method added successfully',
     });
   } catch (error) {
-    console.error('❌ Error adding method:', error.message);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-    });
+    res.status(error.isBoom ? error.output.statusCode : 500).json({ error: error.message });
   }
 };
 
-/**
- * 📝 **Delete a Communication Method**
- */
-const deleteMethod = async (req, res, next) => {
+// ✅ Update Communication Method
+const updateMethod = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const deleted = await CommunicationModel.deleteMethod(id);
-    if (!deleted) {
-      throw Boom.notFound('Communication method not found.');
+    const { error } = addMethodSchema.validate(
+      { id: req.params.id, ...req.body },
+      { abortEarly: false }
+    );
+    if (error) {
+      throw Boom.badRequest(error.details[0].message);
     }
 
-    return res.status(200).json({
-      success: true,
-      message: 'Communication method deleted successfully.',
-    });
+    await CommunicationModel.updateMethod(req.params.id, req.body);
+    res.json({ message: 'Method updated successfully' });
   } catch (err) {
-    console.error('❌ Error deleting method:', err.message);
-    next(err.isBoom ? err : Boom.internal('Failed to delete communication method'));
+    res.status(err.isBoom ? err.output.statusCode : 500).json({ error: err.message });
   }
 };
 
-/**
- * 📝 **Get Communication Method by Email**
- */
-const getMethodByEmail = async (req, res, next) => {
+// ✅ Delete Communication Method
+const deleteMethod = async (req, res) => {
   try {
-    const { email } = req.params;
-
-    const method = await CommunicationModel.getMethodByEmail(email);
-    if (!method) {
-      throw Boom.notFound('Communication method not found.');
+    const { error } = deleteMethodSchema.validate({ id: req.params.id });
+    if (error) {
+      throw Boom.badRequest(error.details[0].message);
     }
 
-    return res.status(200).json({
-      success: true,
-      message: 'Communication method fetched successfully.',
-      data: method,
-    });
+    await CommunicationModel.deleteMethod(req.params.id);
+    res.json({ message: 'Communication method deleted successfully' });
   } catch (err) {
-    console.error('❌ Error fetching method by email:', err.message);
-    next(err.isBoom ? err : Boom.internal('Failed to fetch communication method'));
+    res.status(err.isBoom ? err.output.statusCode : 500).json({ error: err.message });
   }
+};
+
+// ✅ Validate Middleware for Routes
+const validateGetMethodByEmail = (req, res, next) => {
+  const { error } = getMethodByEmailSchema.validate(req.query, { abortEarly: false });
+  if (error) {
+    throw Boom.badRequest(error.details[0].message);
+  }
+  next();
+};
+
+const validateAddMethod = (req, res, next) => {
+  const { error } = addMethodSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    throw Boom.badRequest(error.details[0].message);
+  }
+  next();
+};
+
+const validateUpdateMethod = (req, res, next) => {
+  const { error } = addMethodSchema.validate(
+    { id: req.params.id, ...req.body },
+    { abortEarly: false }
+  );
+  if (error) {
+    throw Boom.badRequest(error.details[0].message);
+  }
+  next();
+};
+
+const validateDeleteMethod = (req, res, next) => {
+  const { error } = deleteMethodSchema.validate({ id: req.params.id });
+  if (error) {
+    throw Boom.badRequest(error.details[0].message);
+  }
+  next();
 };
 
 module.exports = {
-  getAllMethods,
+  getAllMethodsByEmail,
   addMethod,
+  updateMethod,
   deleteMethod,
-  getMethodByEmail,
+  validateGetMethodByEmail,
+  validateAddMethod,
+  validateUpdateMethod,
+  validateDeleteMethod,
 };

@@ -12,7 +12,7 @@ const createTable = async () => {
         description TEXT,
         sequence INT NOT NULL,
         mandatory BOOLEAN DEFAULT FALSE,
-        adminEmail VARCHAR(255) NOT NULL,
+        adminEmail VARCHAR(255) NOT NULL,  -- Foreign key referencing 'admin.email'
         FOREIGN KEY (adminEmail) REFERENCES admin(email) ON DELETE CASCADE
       );
     `);
@@ -24,20 +24,29 @@ const createTable = async () => {
 };
 
 /**
- * 📝 **Get All Communication Methods**
+ * 📝 **Get All Communication Methods by adminEmail**
+ * @param {String} adminEmail - Admin's email to filter the methods
+ * @returns {Array} List of communication methods
  */
-const getAllMethods = async () => {
+const getAllMethodsByEmail = async (email) => {
+  if (!email) {
+    throw new Error("adminEmail is required to fetch communication methods.");
+  }
+
   try {
-    const [results] = await db.execute('SELECT * FROM CommunicationMethods ORDER BY sequence');
+    const [results] = await db.execute(
+      'SELECT * FROM CommunicationMethods WHERE adminEmail = ? ORDER BY sequence', 
+      [email]
+    );
     return results;
   } catch (err) {
-    console.error('❌ Error fetching communication methods:', err.message);
+    console.error('❌ Error fetching communication methods by adminEmail:', err.message);
     throw err;
   }
 };
 
 /**
- * 📝 **Add a Communication Method**
+ * 📝 **Add a new Communication Method**
  */
 const addMethod = async (method) => {
   const { name, description = '', sequence, mandatory = false, adminEmail } = method;
@@ -60,34 +69,21 @@ const addMethod = async (method) => {
 
 /**
  * 📝 **Delete a Communication Method**
+ * @param {Number} id - Method ID
  */
 const deleteMethod = async (id) => {
   try {
     const [result] = await db.execute('DELETE FROM CommunicationMethods WHERE id = ?', [id]);
-    return result.affectedRows > 0;
+    return result.affectedRows > 0; // Return true if a row was deleted
   } catch (err) {
     console.error('❌ Error deleting communication method:', err.message);
     throw err;
   }
 };
 
-/**
- * 📝 **Get Communication Method by Email**
- */
-const getMethodByEmail = async (email) => {
-  try {
-    const [rows] = await db.execute("SELECT * FROM CommunicationMethods WHERE adminEmail = ?", [email]);
-    return rows[0] || null;
-  } catch (err) {
-    console.error('❌ Error fetching communication method by Email:', err.message);
-    throw err;
-  }
-};
-
 module.exports = {
   createTable,
-  getAllMethods,
+  getAllMethodsByEmail,
   addMethod,
   deleteMethod,
-  getMethodByEmail,
 };
