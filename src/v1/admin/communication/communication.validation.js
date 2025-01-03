@@ -3,7 +3,7 @@ const Joi = require('joi');
 const addMethodSchema = Joi.object({
   name: Joi.string().required(),
   description: Joi.string().allow(''),
-  sequence: Joi.number().positive().optional(),
+  sequence: Joi.optional(),
   mandatory: Joi.boolean().required(),
   adminEmail: Joi.string().email().required()
 });
