@@ -38,6 +38,7 @@ ServerSuccess.success={
   "companyAddedSuccess":"Company added successfully",
   "userAddedSuccess":"Account created successfully",
   "userLoginSuccess":"User Logged in successfully",
+  "adminLoginSuccess":"Admin Logged in successfully",
   "userLogoutSuccess":"Logged out successfully",
   "certificateCreateSuccess":"Certificate created successfully",
   "templateRetrived":"Templates retrived successfully",

@@ -6,6 +6,7 @@ const adminsignupRoutes = require('./auth/adminsignup/signup.routes');
 const logoutRoutes = require('./auth/logout/logout.routes');
 const forgotPasswordRoutes = require('./auth/forgotPassword/forgotPassword.routes');
 const communicationRoute = require('./admin/communication/communication.routes');
+const usercommunicationRoute = require('./user/communication/communication.routes');
 const companyRoutes = require('./admin/company/company.routes');
 
 
@@ -19,6 +20,7 @@ router.use('/logout', logoutRoutes);
 router.use('/forgot', forgotPasswordRoutes);
 router.use('/company', companyRoutes);
 router.use('/communication', communicationRoute);
+router.use('/user/communication', usercommunicationRoute);
 
 
 module.exports = router;

@@ -62,7 +62,7 @@ const login = async (req, res,next) => {
     
    
         const message= {
-        message:ServerSuccess.success.userLoginSuccess,
+        message:ServerSuccess.success.adminLoginSuccess,
         "token" : Token
     }
     const successMessage = await successResponse(true,200,message)
