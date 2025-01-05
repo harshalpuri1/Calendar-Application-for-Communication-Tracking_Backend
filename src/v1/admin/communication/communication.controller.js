@@ -1,44 +1,33 @@
-const CommunicationModel = require('./communication.model');
+const CommunicationModel = require("./communication.model");
 const {
   addMethodSchema,
   deleteMethodSchema,
-  getMethodByEmailSchema
-} = require('./communication.validation');
-const redis = require('../../../services/database/redis');
-const Boom = require('@hapi/boom'); // Ensure Boom is installed and imported
+  getMethodByEmailSchema,
+} = require("./communication.validation");
+const Boom = require("@hapi/boom"); // Ensure Boom is installed and imported
 
 // ✅ Get Communication Methods by adminEmail
 const getAllMethodsByEmail = async (req, res) => {
   try {
-    const { error } = getMethodByEmailSchema.validate(req.query, { abortEarly: false });
+    const { error } = getMethodByEmailSchema.validate(req.query, {
+      abortEarly: false,
+    });
     if (error) {
       throw Boom.badRequest(error.details[0].message);
     }
-    const email = req.query.email;
-    const cacheKey = `communication_methods:${email}`;
 
-        // Check Redis Cache
-        const cachedData = await redis.get(cacheKey);
-        if (cachedData) {
-          return res.status(200).json({
-            success: true,
-            message: 'Communication methods fetched from cache.',
-            data: JSON.parse(cachedData),
-          });
-        }
-
-    const methods = await CommunicationModel.getAllMethodsByEmail(req.query.email);
-    await redis.set(cacheKey, JSON.stringify(methods), {
-      EX: 3600, // Cache expiration (1 hour)
-    });
-
+    const methods = await CommunicationModel.getAllMethodsByEmail(
+      req.query.email
+    );
     return res.status(200).json({
       success: true,
-      message: 'Communication methods fetched successfully.',
+      message: "Communication methods fetched successfully.",
       data: methods,
     });
   } catch (err) {
-    res.status(err.isBoom ? err.output.statusCode : 500).json({ error: err.message });
+    res
+      .status(err.isBoom ? err.output.statusCode : 500)
+      .json({ error: err.message });
   }
 };
 
@@ -57,16 +46,17 @@ const addMethod = async (req, res) => {
       description,
       sequence,
       mandatory,
-      adminEmail
+      adminEmail,
     });
-    await redis.del(`communication_methods:${adminEmail}`);
 
     return res.status(201).json({
       success: true,
-      message: 'Method added successfully',
+      message: "Method added successfully",
     });
   } catch (error) {
-    res.status(error.isBoom ? error.output.statusCode : 500).json({ error: error.message });
+    res
+      .status(error.isBoom ? error.output.statusCode : 500)
+      .json({ error: error.message });
   }
 };
 
@@ -82,12 +72,11 @@ const updateMethod = async (req, res) => {
     }
 
     await CommunicationModel.updateMethod(req.params.id, req.body);
-    
-    await redis.del(`communication_methods:${req.body.adminEmail}`);
-    
-    res.json({ message: 'Method updated successfully' });
+    res.json({ message: "Method updated successfully" });
   } catch (err) {
-    res.status(err.isBoom ? err.output.statusCode : 500).json({ error: err.message });
+    res
+      .status(err.isBoom ? err.output.statusCode : 500)
+      .json({ error: err.message });
   }
 };
 
@@ -98,20 +87,21 @@ const deleteMethod = async (req, res) => {
     if (error) {
       throw Boom.badRequest(error.details[0].message);
     }
-    const method = await CommunicationModel.getMethodById(req.params.id);
 
     await CommunicationModel.deleteMethod(req.params.id);
-    await redis.del(`communication_methods:${method.adminEmail}`);
-
-    res.json({ message: 'Communication method deleted successfully' });
+    res.json({ message: "Communication method deleted successfully" });
   } catch (err) {
-    res.status(err.isBoom ? err.output.statusCode : 500).json({ error: err.message });
+    res
+      .status(err.isBoom ? err.output.statusCode : 500)
+      .json({ error: err.message });
   }
 };
 
 // ✅ Validate Middleware for Routes
 const validateGetMethodByEmail = (req, res, next) => {
-  const { error } = getMethodByEmailSchema.validate(req.query, { abortEarly: false });
+  const { error } = getMethodByEmailSchema.validate(req.query, {
+    abortEarly: false,
+  });
   if (error) {
     throw Boom.badRequest(error.details[0].message);
   }
