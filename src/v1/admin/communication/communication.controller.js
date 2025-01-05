@@ -4,7 +4,7 @@ const {
   deleteMethodSchema,
   getMethodByEmailSchema
 } = require('./communication.validation');
-const redisClient = require('../../../services/database/redis');
+const redis = require('../../../services/database/redis');
 const Boom = require('@hapi/boom'); // Ensure Boom is installed and imported
 
 // ✅ Get Communication Methods by adminEmail
@@ -18,7 +18,7 @@ const getAllMethodsByEmail = async (req, res) => {
     const cacheKey = `communication_methods:${email}`;
 
         // Check Redis Cache
-        const cachedData = await redisClient.get(cacheKey);
+        const cachedData = await redis.get(cacheKey);
         if (cachedData) {
           return res.status(200).json({
             success: true,
@@ -28,7 +28,7 @@ const getAllMethodsByEmail = async (req, res) => {
         }
 
     const methods = await CommunicationModel.getAllMethodsByEmail(req.query.email);
-    await redisClient.set(cacheKey, JSON.stringify(methods), {
+    await redis.set(cacheKey, JSON.stringify(methods), {
       EX: 3600, // Cache expiration (1 hour)
     });
 
@@ -59,7 +59,7 @@ const addMethod = async (req, res) => {
       mandatory,
       adminEmail
     });
-    await redisClient.del(`communication_methods:${adminEmail}`);
+    await redis.del(`communication_methods:${adminEmail}`);
 
     return res.status(201).json({
       success: true,
@@ -83,7 +83,7 @@ const updateMethod = async (req, res) => {
 
     await CommunicationModel.updateMethod(req.params.id, req.body);
     
-    await redisClient.del(`communication_methods:${req.body.adminEmail}`);
+    await redis.del(`communication_methods:${req.body.adminEmail}`);
     
     res.json({ message: 'Method updated successfully' });
   } catch (err) {
@@ -101,7 +101,7 @@ const deleteMethod = async (req, res) => {
     const method = await CommunicationModel.getMethodById(req.params.id);
 
     await CommunicationModel.deleteMethod(req.params.id);
-    await redisClient.del(`communication_methods:${method.adminEmail}`);
+    await redis.del(`communication_methods:${method.adminEmail}`);
 
     res.json({ message: 'Communication method deleted successfully' });
   } catch (err) {
