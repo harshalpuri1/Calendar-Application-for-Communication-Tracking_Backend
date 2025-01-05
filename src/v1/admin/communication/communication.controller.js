@@ -4,6 +4,7 @@ const {
   deleteMethodSchema,
   getMethodByEmailSchema,
 } = require("./communication.validation");
+const redis = require("../../../services/database/redis");
 const Boom = require("@hapi/boom"); // Ensure Boom is installed and imported
 
 // ✅ Get Communication Methods by adminEmail
@@ -15,10 +16,26 @@ const getAllMethodsByEmail = async (req, res) => {
     if (error) {
       throw Boom.badRequest(error.details[0].message);
     }
+    const email = req.query.email;
+    const cacheKey = `communication_methods:${email}`;
+
+    // Check Redis Cache
+    const cachedData = await redis.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json({
+        success: true,
+        message: "Communication methods fetched from cache.",
+        data: JSON.parse(cachedData),
+      });
+    }
 
     const methods = await CommunicationModel.getAllMethodsByEmail(
       req.query.email
     );
+    await redis.set(cacheKey, JSON.stringify(methods), {
+      EX: 3600, // Cache expiration (1 hour)
+    });
+
     return res.status(200).json({
       success: true,
       message: "Communication methods fetched successfully.",
@@ -48,6 +65,7 @@ const addMethod = async (req, res) => {
       mandatory,
       adminEmail,
     });
+    await redis.del(`communication_methods:${adminEmail}`);
 
     return res.status(201).json({
       success: true,
@@ -72,6 +90,9 @@ const updateMethod = async (req, res) => {
     }
 
     await CommunicationModel.updateMethod(req.params.id, req.body);
+
+    await redis.del(`communication_methods:${req.body.adminEmail}`);
+
     res.json({ message: "Method updated successfully" });
   } catch (err) {
     res
@@ -87,8 +108,11 @@ const deleteMethod = async (req, res) => {
     if (error) {
       throw Boom.badRequest(error.details[0].message);
     }
+    const method = await CommunicationModel.getMethodById(req.params.id);
 
     await CommunicationModel.deleteMethod(req.params.id);
+    await redis.del(`communication_methods:${method.adminEmail}`);
+
     res.json({ message: "Communication method deleted successfully" });
   } catch (err) {
     res
