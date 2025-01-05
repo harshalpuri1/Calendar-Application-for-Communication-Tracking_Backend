@@ -1,5 +1,5 @@
 const db = require("../../../services/database/mysql");
-const redis = require("../../../services/database/redis");
+
 /**
  * 📝 **Create CommunicationMethods Table if not exists**
  */
@@ -16,39 +16,31 @@ const createTable = async () => {
         FOREIGN KEY (adminEmail) REFERENCES admin(email) ON DELETE CASCADE
       );
     `);
-    console.log("✅ CommunicationMethods table created or already exists");
+    console.log('✅ CommunicationMethods table created or already exists');
   } catch (err) {
-    console.error("❌ Error creating CommunicationMethods table:", err.message);
+    console.error('❌ Error creating CommunicationMethods table:', err.message);
     throw err;
   }
 };
 
+/**
+ * 📝 **Get All Communication Methods by adminEmail**
+ * @param {String} adminEmail - Admin's email to filter the methods
+ * @returns {Array} List of communication methods
+ */
 const getAllMethodsByEmail = async (email) => {
   if (!email) {
     throw new Error("adminEmail is required to fetch communication methods.");
   }
-  const cacheKey = `communication_methods:${email}`;
 
   try {
-    const cachedData = await redis.get(cacheKey);
-    if (cachedData) {
-      console.log("✅ Fetched from Redis cache");
-      return JSON.parse(cachedData);
-    }
-
     const [results] = await db.execute(
-      "SELECT * FROM CommunicationMethods WHERE adminEmail = ? ORDER BY sequence",
+      'SELECT * FROM CommunicationMethods WHERE adminEmail = ? ORDER BY sequence', 
       [email]
     );
-    await redis.set(cacheKey, JSON.stringify(results), "EX", 3600); // 1-hour cache expiry
-
-    console.log("✅ Fetched from database and cached in Redis");
     return results;
   } catch (err) {
-    console.error(
-      "❌ Error fetching communication methods by adminEmail:",
-      err.message
-    );
+    console.error('❌ Error fetching communication methods by adminEmail:', err.message);
     throw err;
   }
 };
@@ -57,18 +49,10 @@ const getAllMethodsByEmail = async (email) => {
  * 📝 **Add a new Communication Method**
  */
 const addMethod = async (method) => {
-  const {
-    name,
-    description = "",
-    sequence,
-    mandatory = false,
-    adminEmail,
-  } = method;
+  const { name, description = '', sequence, mandatory = false, adminEmail } = method;
 
   if (!name || !sequence || !adminEmail) {
-    throw new Error(
-      "Required fields are missing: name, sequence, or adminEmail."
-    );
+    throw new Error('Required fields are missing: name, sequence, or adminEmail.');
   }
 
   try {
@@ -77,31 +61,22 @@ const addMethod = async (method) => {
        VALUES (?, ?, ?, ?, ?)`,
       [name, description, sequence, mandatory, adminEmail]
     );
-    // Invalidate Cache
-    await redis.del(`communication_methods:${adminEmail}`);
-    console.log("✅ Method added and cache invalidated");
   } catch (err) {
-    console.error("❌ Error adding method:", err.message);
+    console.error('❌ Error adding method:', err.message);
     throw err;
   }
 };
 
+/**
+ * 📝 **Delete a Communication Method**
+ * @param {Number} id - Method ID
+ */
 const deleteMethod = async (id) => {
   try {
-    const [result] = await db.execute(
-      "DELETE FROM CommunicationMethods WHERE id = ?",
-      [id]
-    );
-    if (result.affectedRows > 0) {
-      // Invalidate Cache
-      await redis.del(`communication_methods:${adminEmail}`);
-      console.log("✅ Method deleted and cache invalidated");
-      return true;
-    }
-
-    return false;
+    const [result] = await db.execute('DELETE FROM CommunicationMethods WHERE id = ?', [id]);
+    return result.affectedRows > 0; // Return true if a row was deleted
   } catch (err) {
-    console.error("❌ Error deleting communication method:", err.message);
+    console.error('❌ Error deleting communication method:', err.message);
     throw err;
   }
 };
