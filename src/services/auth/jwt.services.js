@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { ServerError } = require("../../utils/apiResponse");
 
-const secretKey = "harshal";
+const secretKey = process.env.SECRET_KEY;
 
 const signToken = (user) => {
   return jwt.sign(
